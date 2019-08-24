@@ -1,4 +1,11 @@
 "use strict";
+
+// Font Awesome 5 (Free)
+import '@fortawesome/fontawesome-free/js/fontawesome'
+import '@fortawesome/fontawesome-free/js/solid' 
+import '@fortawesome/fontawesome-free/js/regular'
+import '@fortawesome/fontawesome-free/js/brands' 
+
 import "../css/style.scss";
 
 import * as PIXI from "pixi.js";
@@ -7,12 +14,14 @@ import {
   loader
 } from "./pixi_init"
 
-// import arr from "./array"
 import arrayModule from "./array";
-let arr = arrayModule([5, 1, 3, 7, 4, 6, 2], PIXI, app);
+let arr = arrayModule([5, 1, 3, 7, 9, 4, 6, 2], PIXI, app);
 
 import bubbleSort from "./bubble_sort";
 import selectionSort from "./selection_sort";
+import quickSort from "./quick_sort";
+
+import "./ui"
 
 
 // loader.load(setup);
@@ -23,60 +32,93 @@ import selectionSort from "./selection_sort";
 // app.stage.addChild(cat);
 
 
-let isActive = true;
-let drawDialog = () => {
-  if (!isActive)
-    return;
-  let dialogBackground = new PIXI.Graphics();
+{
+// let isActive = true;
+// let drawDialog = () => {
+//   if (!isActive)
+//     return;
+//   let dialogBackground = new PIXI.Graphics();
 
-  dialogBackground.beginFill(0x000000);
-  dialogBackground.drawRect(
-    0,
-    0,
-    window.innerWidth,
-    window.innerHeight
-  );
-  dialogBackground.endFill();
-  app.stage.addChild(dialogBackground);
+//   dialogBackground.beginFill(0x000000);
+//   dialogBackground.drawRect(
+//     0,
+//     0,
+//     window.innerWidth,
+//     window.innerHeight
+//   );
+//   dialogBackground.endFill();
+//   app.stage.addChild(dialogBackground);
 
-  dialogBackground.alpha = 0.3;
+//   dialogBackground.alpha = 0.3;
 
-  // dialogBackground.buttonMode = true;
+//   // dialogBackground.buttonMode = true;
 
-  dialogBackground.interactive = true;
-  dialogBackground.hitArea = new PIXI.Rectangle(
-    0,
-    0,
-    window.innerWidth,
-    window.innerHeight
-  );
+//   dialogBackground.interactive = true;
+//   dialogBackground.hitArea = new PIXI.Rectangle(
+//     0,
+//     0,
+//     window.innerWidth,
+//     window.innerHeight
+//   );
 
-  dialogBackground.on('mousedown', () => {
-    dialogBackground.alpha = 0;
-    dialogBackground.interactive = false;
-  })
-};
+//   dialogBackground.on('mousedown', () => {
+//     dialogBackground.alpha = 0;
+//     dialogBackground.interactive = false;
+//   })
+// };
+}
 
 arr.drawRects();
-drawDialog();
+// drawDialog();
 
+let headerDom = document.querySelector("#header");
+let algorithmsDom = headerDom.querySelector("#algorithms");
+let dataDom = headerDom.querySelector("#data");
 
-// bubbleSort(arr);
-selectionSort(arr);
+let algorithms = [{
+    name: "Bubble sort",
+    id: "bubbleSort",
+    f: bubbleSort
+  },
+  {
+    name: "Selection sort",
+    id: "selectionSort",
+    f: selectionSort
+  },
+  {
+    name: "Quick sort",
+    id: "quickSort",
+    f: quickSort
+  }
+]
 
-//   if (min !== i) {
-//     arr.swap(i, min);
-//   }
-// }
+let shuffleButton = document.createElement("button");
+shuffleButton.innerText = "Shuffle";
+shuffleButton.setAttribute("id", "shuffle");
+shuffleButton.addEventListener("click",
+    e => {
+      arr.shuffle();
+    }
+  );
+dataDom.appendChild(shuffleButton);
 
-let fps = 60;
-// setInterval(logic, fps);
+algorithms.forEach(algorithm => {
+  let algorithmButton = document.createElement("button");
+  algorithmButton.setAttribute("id", algorithm.id);
+  algorithmButton.innerText = algorithm.name;
+
+  algorithmButton.addEventListener("click",
+    () => {
+      algorithm.f(arr)
+      if(arr._animationValues.animationPaused === true)
+        togglePlay();
+    }
+  );
+
+  algorithmsDom.appendChild(algorithmButton)
+})
+
 animate();
-
-// function logic() {
-// arr.swap(1, 3);
-// arr.swap(1, 3);
-// }
 
 function animate() {
   app.renderer.render(app.stage);
@@ -87,14 +129,16 @@ function animate() {
 }
 
 
-
-
-let pauseButton = document.querySelector("#pause");
-pauseButton.onclick =  () => {
+function togglePlay() {
   arr._animationValues.animationPaused = !arr._animationValues.animationPaused;
 
-  if(arr._animationValues.animationPaused)
-    pauseButton.value = "Play"
+  if (arr._animationValues.animationPaused)
+    pauseButton.innerText = "Play"
   else
-    pauseButton.value = "Pause"
+    pauseButton.innerText = "Pause"
+}
+
+let pauseButton = document.querySelector("#pause");
+pauseButton.onclick = () => {
+  togglePlay();
 }

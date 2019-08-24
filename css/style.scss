@@ -1,22 +1,85 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto&display=swap');
+
 * {
+  font-family: 'Roboto', sans-serif;
+
   padding:0;
   margin:0;
   box-sizing: border-box;
 }
 
-#options {
-  position: absolute;
-  width: 100vw;
-  height: 100px;
-  bottom: 0px;
-  background: rgba(255,255,255,0.4);
-  padding: 20px;
-  z-index: 999;
+body {
+  overflow: hidden;
 }
 
-// body {
-//   background: red;
-//   h1 {
-//     color: #fff;
-//   }
-// }
+#options {
+  bottom: 0px;
+}
+
+#header {
+  top: 0;
+
+  #shuffle {
+    float: right;
+  }
+}
+
+#header, #options {
+  display: none;
+  position: absolute;
+  width: 100vw;
+
+  z-index: 1000;
+  background: rgba(255,255,255,0.4);
+  
+  button {
+    padding: 10px;
+    margin: 5px;
+    cursor: pointer;
+    float: left;
+  }
+}
+
+#mainMenu {
+  width: 50px;
+  height: 100vh;
+  position: absolute;
+  right: 5px;
+  top: 0;
+  z-index: 1005;
+
+  .mainMenuIcon {
+    width: 200px;
+    height: 50px;
+    background-color:#fff;
+    // background-size: 30px 30px;
+    // background-position: center; 
+    // background-repeat: no-repeat;
+    text-align: left;
+    padding-left: 12px;
+    line-height: 50px;
+    font-size: 25px;
+    margin: 30px 0;
+    border-top-left-radius: 50px;
+    border-bottom-left-radius: 50px;
+    cursor: pointer;
+    transition: transform .3s ease-in-out;
+
+    .desc {
+      font-size: 23px;
+    }
+
+    svg {
+      margin-right: 30px;
+      transition: transform .3s ease-in-out;
+    }
+  }
+
+  .mainMenuIcon:hover {
+    transform: translateX(-145px);
+
+    svg {
+      transform: rotate(-90deg);
+    }
+  }
+}

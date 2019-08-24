@@ -1,10 +1,9 @@
 const path = require("path");
+const webpack = require("webpack");
 
 module.exports = {
   entry: {
     main: "./js/main.js",
-    // a: "./js/a.js",
-    // b: "./js/b.js"
   },
   output: {
     path: path.resolve(__dirname, "dist"),
@@ -26,7 +25,21 @@ module.exports = {
           "css-loader", // translates CSS into CommonJS
           "sass-loader" // compiles Sass to CSS, using Node Sass by default
         ]
+      },
+      {
+        test: /\.(png|jpe?g|gif|svg)$/i,
+        loader: 'file-loader',
+        options: {
+          outputPath: './images',
+          publicPath: './dist/images',
+        },
       }
     ]
-  }
+  },
+  plugins: [
+    new webpack.ProvidePlugin({
+      $: 'jquery',
+      jQuery: 'jquery'
+    })
+  ]
 };

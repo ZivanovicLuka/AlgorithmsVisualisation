@@ -15,7 +15,6 @@ class VisualArray {
       animationSpeed: 5,
       animationTime: 0,
 
-
       // -1 -> animation end
       //  0 -> animation start
       //  1 -> going top and bottom
@@ -33,7 +32,6 @@ class VisualArray {
         y: 0
       },
 
-      
       highlightDuration: 200,
     }
 
@@ -56,9 +54,11 @@ class VisualArray {
       activeAlpha: 1
     }
 
-    this._state = {
-      hoveredIndex: -1
+    this._layoutProps = {
+      x: (window.innerWidth - (this._rectProps.n * this._rectProps.width) - (this._rectProps.n * this.props.gap)) / 2,
+      y: (window.innerHeight - this._rectProps.height) / 2
     }
+
     // if (this.constructor === VisualArray) {
     //   throw new TypeError('Abstract class "VisualArray" cannot be instantiated directly.');
     // }
@@ -72,33 +72,28 @@ class VisualArray {
     return this._props;
   }
 
-  get hoveredIndex() {
-    return this._state.hoveredIndex;
-  }
+  generateNode(v, i) {
+    let x = this._layoutProps.x + i * (this._rectProps.width + this._props.gap);
+    let y = this._layoutProps.y;
+    let width = this._rectProps.width;
+    let height = this._rectProps.height;
 
-  set hoveredIndex(index) {
-    this._state.hoveredIndex = index;
+    return {
+      val: v,
+      x,
+      y,
+      width,
+      height,
+      center: {
+        x: width / 2,
+        y: height / 2
+      }
+    }
   }
 
   get nodes() {
     return this._array.map((v, i) => {
-      let x = 100 + i * (this._rectProps.width + this._props.gap);
-      let y = 100;
-      let width = this._rectProps.width;
-      let height = this._rectProps.height;
-
-      return {
-        val: v,
-        x,
-        y,
-        width,
-        height,
-        center: {
-          x: width / 2,
-          y: height / 2
-        },
-        isHovered: this._state.hoveredIndex == i
-      }
+      return this.generateNode(v, i)
     })
   }
 
@@ -155,13 +150,12 @@ class VisualArray {
 
   drawRects() {
     this._rects = new this.pixi.Graphics();
-    return this.nodes.map((r, i) => {
+    let rects = this.nodes.map((r, i) => {
       let rectGraphics = new this.pixi.Graphics();
 
       let rect = this.drawRect(rectGraphics, r, i);
 
       rectGraphics.mouseover = () => {
-        this.hoveredIndex = i;
         rectGraphics.alpha = 1;
       };
 
@@ -173,6 +167,14 @@ class VisualArray {
 
       return rect;
     })
+
+    // TODO -> add node for adding new element
+    
+    // let addRectGraphics = new this.pixi.Graphics();
+    // let addRect = this.drawRect(addRectGraphics, this.generateNode('+',this._rects.children.length), this._rects.children.length);
+    // this.app.stage.addChild(addRect);
+
+    return rects;
   }
 
   swapAnimation1(i, j) {
@@ -187,8 +189,8 @@ class VisualArray {
 
   swapAnimation2(i, j) {
     if (this._rects.children[i].x < this._animationValues.swapSecond.x) {
-      this._rects.children[i].x += this._animationValues.animationSpeed * Math.log(j-i+1);
-      this._rects.children[j].x -= this._animationValues.animationSpeed * Math.log(j-i+1);
+      this._rects.children[i].x += this._animationValues.animationSpeed * Math.log(j - i + 1);
+      this._rects.children[j].x -= this._animationValues.animationSpeed * Math.log(j - i + 1);
     } else {
       this._rects.children[i].x = this._animationValues.swapSecond.x;
       this._rects.children[j].x = this._animationValues.swapFirst.x;
@@ -259,12 +261,13 @@ class VisualArray {
       });
   }
 
-                // highlight, active  
-  mark(indices, markType="highlight") {
+  // highlight, active  
+  mark(indices = [], markType = "highlight", all = false) {
     this._animationArray.unshift({
       type: "mark",
       indices,
-      markType
+      markType,
+      all
     });
   }
 
@@ -273,20 +276,60 @@ class VisualArray {
       rect.alpha = this.props.normalAlpha;
     }
 
-    for (const i of this.currentAnimation.indices) {
-      if(this.currentAnimation.markType === "highlight")
-        this._rects.children[i].alpha = this.props.highlightedAlpha;
-      else if(this.currentAnimation.markType === "active")
-      this._rects.children[i].alpha = this.props.activeAlpha;
+    if (this.currentAnimation.all === true) {
+      this.currentAnimation.indices = []
+      for (let i = 0; i < this.len; i++)
+        this.currentAnimation.indices.push(i);
     }
 
-    this._animationValues.animationTime+=this._animationValues.animationSpeed;
-    if(this._animationValues.animationTime >= this._animationValues.highlightDuration)
+    for (const item of this.currentAnimation.indices) {
+      if (this.currentAnimation.markType === "highlight")
+        this._rects.children[item].alpha = this.props.highlightedAlpha;
+      else if (this.currentAnimation.markType === "active")
+        this._rects.children[item].alpha = this.props.activeAlpha;
+      else if (this.currentAnimation.markType === "mixed") {
+        if (item.markType === "highlight") {
+          this._rects.children[item.index].alpha = this.props.highlightedAlpha;
+        } else if (item.markType === "active") {
+          this._rects.children[item.index].alpha = this.props.activeAlpha;
+        }
+      }
+
+    }
+
+    this._animationValues.animationTime += this._animationValues.animationSpeed;
+    if (this._animationValues.animationTime >= this._animationValues.highlightDuration)
       this.currentAnimation = null;
   }
 
+  _shuffle() {
+    for (let i = this.len - 1; i > 0; i--) {
+      let j = Math.floor(Math.random() * i);
+      let rects = this._rects.children;
+
+      [rects[i].x, rects[j].x] = [rects[j].x, rects[i].x];
+      [rects[i].y, rects[j].y] = [rects[j].y, rects[i].y];
+
+      [rects[i], rects[j]] = [rects[j], rects[i]];
+      [this._array[i], this._array[j]] = [this._array[j], this._array[i]];
+    }
+  }
+
+  shuffle() {
+    for (let i = this.len - 1; i > 0; i--) {
+      let j = Math.floor(Math.random() * i);
+      let rects = this._rects.children;
+
+      [rects[i].x, rects[j].x] = [rects[j].x, rects[i].x];
+      [rects[i].y, rects[j].y] = [rects[j].y, rects[i].y];
+
+      [rects[i], rects[j]] = [rects[j], rects[i]];
+      [this._array[i], this._array[j]] = [this._array[j], this._array[i]];
+    }
+  }
+
   draw() {
-    if(this._animationValues.animationPaused)
+    if (this._animationValues.animationPaused)
       return;
     // console.log(this._animationArray.length)
     if (!this.currentAnimation) {
