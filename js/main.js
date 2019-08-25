@@ -14,8 +14,13 @@ import {
   loader
 } from "./pixi_init"
 
+import 'jquery';
+
+
 import arrayModule from "./array";
-let arr = arrayModule([5, 1, 3, 7, 9, 4, 6, 2], PIXI, app);
+let arr = arrayModule([5, 1, 3, 4, 6, 2], PIXI, app);
+// let arr = arrayModule([1,4,5,2], PIXI, app);
+
 
 import bubbleSort from "./bubble_sort";
 import selectionSort from "./selection_sort";
@@ -137,6 +142,13 @@ function togglePlay() {
   else
     pauseButton.innerText = "Pause"
 }
+
+let animationSpeedRange = $("#animationSpeed");
+animationSpeedRange.on("input change", () =>
+{ 
+  arr.animationSpeed = parseFloat(animationSpeedRange.val());
+  $("#animationSpeedOutput").val(animationSpeedRange.val());
+});
 
 let pauseButton = document.querySelector("#pause");
 pauseButton.onclick = () => {

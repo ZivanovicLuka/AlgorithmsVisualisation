@@ -8,6 +8,8 @@ class VisualArray {
     this.currentAnimation = null;
     this._animationArray = [];
 
+    this.editMode = true;
+
     this._animationValues = {
       i: -1,
       j: -1,
@@ -59,6 +61,8 @@ class VisualArray {
       y: (window.innerHeight - this._rectProps.height) / 2
     }
 
+    this.addNode = null;
+
     // if (this.constructor === VisualArray) {
     //   throw new TypeError('Abstract class "VisualArray" cannot be instantiated directly.');
     // }
@@ -72,9 +76,40 @@ class VisualArray {
     return this._props;
   }
 
-  generateNode(v, i) {
+  generateNodePosition(i) {
     let x = this._layoutProps.x + i * (this._rectProps.width + this._props.gap);
     let y = this._layoutProps.y;
+    return {
+      x,
+      y
+    }
+  }
+
+  repositionateNodes() {
+    this._rects.children.forEach((node, i) => {
+      node._customIndex = i;
+
+      let {
+        x,
+        y
+      } = this.generateNodePosition(i);
+      node.x = x;
+      node.y = y;
+    })
+
+    let {
+      x,
+      y
+    } = this.generateNodePosition(this._rects.children.length);
+    this.addNode.x = x;
+    this.addNode.y = y;
+  }
+
+  generateNode(v, i) {
+    let {
+      x,
+      y
+    } = this.generateNodePosition(i);
     let width = this._rectProps.width;
     let height = this._rectProps.height;
 
@@ -101,12 +136,77 @@ class VisualArray {
     return this._array.length;
   }
 
-  drawRect(graphics, r, i) {
-    graphics.beginFill(this.props.innerColor);
+  set animationSpeed(val) {
+    this._animationValues.animationSpeed = val;
+  }
+
+  getRect(i) {
+    return this._rects.children[i].children[0];
+  }
+
+  getNode(i) {
+    return this._rects.children[i];
+  }
+
+  addDelete(node, i) {
+    let deleteGraphics = new this.pixi.Graphics();
+    deleteGraphics.beginFill(0xBB0000);
+    deleteGraphics.alpha = this.props.normalAlpha;
+    deleteGraphics.lineStyle(1, this.props.outerColor);
+    deleteGraphics.x = node.width - 5;
+    deleteGraphics.drawCircle(
+      0,
+      0,
+      10,
+    );
+
+    deleteGraphics.endFill();
+
+    deleteGraphics.buttonMode = true;
+
+    deleteGraphics.defaultCursor = 'pointer';
+
+    deleteGraphics.interactive = true;
+    deleteGraphics.hitArea = new this.pixi.Circle(
+      0,
+      0,
+      10,
+    );
+    
+
+    let text = new this.pixi.Text(
+      '-', {
+        fontFamily: 'Arial',
+        fontSize: 25,
+        fill: 0x999999,
+        align: 'center'
+      });
+    text.anchor.set(0.5, 0.5);
+    text.position.set(0,-2);
+    deleteGraphics.addChild(text);
+
+    node.addChild(deleteGraphics);
+
+    deleteGraphics.click = () => {
+      if (!this.editMode)
+        return;
+
+      let index = deleteGraphics.parent._customIndex;
+
+      this._array.splice(index, 1);
+      deleteGraphics.parent.destroy();
+
+      this.repositionateNodes();
+    };
+
+    return deleteGraphics;
+  }
+
+  drawRect(r, color = null) {
+    let graphics = new this.pixi.Graphics();
+    graphics.beginFill(color ? color : this.props.innerColor);
     graphics.lineStyle(4, this.props.outerColor);
     graphics.drawRoundedRect(
-      // r.x,
-      // r.y,
       0,
       0,
       r.width,
@@ -114,8 +214,21 @@ class VisualArray {
       this.props.radius
     );
     graphics.alpha = this.props.normalAlpha;
-    graphics.x = r.x;
-    graphics.y = r.y;
+    // graphics.x = r.x;
+    // graphics.y = r.y;
+    graphics.endFill();
+
+    graphics.buttonMode = true;
+
+    graphics.defaultCursor = 'pointer';
+
+    graphics.interactive = true;
+    graphics.hitArea = new this.pixi.Rectangle(
+      0,
+      0,
+      r.width,
+      r.height
+    );
 
     let text = new this.pixi.Text(r.val, {
       fontFamily: 'Arial',
@@ -128,81 +241,99 @@ class VisualArray {
 
     graphics.addChild(text);
 
-    graphics.endFill();
-    this._rects.addChild(graphics);
 
-    graphics.buttonMode = true;
-
-    graphics.defaultCursor = 'pointer';
-
-    graphics.interactive = true;
-    graphics.hitArea = new this.pixi.Rectangle(
-      // r.x,
-      // r.y,
-      0,
-      0,
-      r.width,
-      r.height
-    );
 
     return graphics;
+  }
+
+  createNode(rect, r) {
+    let nodeGraphics = new this.pixi.Graphics();
+
+    nodeGraphics.x = r.x;
+    nodeGraphics.y = r.y;
+    nodeGraphics.addChild(rect);
+
+    return nodeGraphics;
+  }
+
+  _addHoverEvent(graphics, mode = "normal") {
+    graphics.mouseover = () => {
+      if (mode == "edit" && !this.editMode)
+        return;
+      graphics.alpha = 1;
+    };
+
+    graphics.mouseout = () => {
+      if (mode == "edit" && !this.editMode)
+        return;
+      graphics.alpha = this.props.normalAlpha;
+    };
   }
 
   drawRects() {
     this._rects = new this.pixi.Graphics();
     let rects = this.nodes.map((r, i) => {
-      let rectGraphics = new this.pixi.Graphics();
 
-      let rect = this.drawRect(rectGraphics, r, i);
+      let rect = this.drawRect(r);
+      this._addHoverEvent(rect);
 
-      rectGraphics.mouseover = () => {
-        rectGraphics.alpha = 1;
-      };
+      let node = this.createNode(rect, r);
+      node._customIndex = i;
+      let deleteNode = this.addDelete(node, i);
+      this._addHoverEvent(deleteNode);
 
-      rectGraphics.mouseout = () => {
-        rectGraphics.alpha = this.props.normalAlpha;
-      };
+      this._rects.addChild(node);
 
-      this.app.stage.addChild(this._rects);
-
-      return rect;
+      return node;
     })
+    this.app.stage.addChild(this._rects);
+
 
     // TODO -> add node for adding new element
-    
-    // let addRectGraphics = new this.pixi.Graphics();
-    // let addRect = this.drawRect(addRectGraphics, this.generateNode('+',this._rects.children.length), this._rects.children.length);
-    // this.app.stage.addChild(addRect);
+
+    let addR = this.generateNode('+', this._rects.children.length);
+    let addRect = this.drawRect(addR, 0x22ED34);
+    this.addNode = this.createNode(addRect, addR);
+
+    if (!this.editMode)
+      addRect.alpha = 0
+
+    this._addHoverEvent(addRect, "edit");
+
+    this.app.stage.addChild(this.addNode);
 
     return rects;
   }
 
   swapAnimation1(i, j) {
-    // console.log(this._rects.children[i].y, this._animationValues.swapSecond.y + this._rectProps.height + this._props.gap)
-    if (this._rects.children[i].y < this._animationValues.swapSecond.y + this._rectProps.height + this._props.gap) {
-      this._rects.children[i].y += this._animationValues.animationSpeed;
-      this._rects.children[j].y -= this._animationValues.animationSpeed;
+    if (this.getNode(i).y < this._animationValues.swapSecond.y + this._rectProps.height + this._props.gap) {
+      this.getNode(i).y += this._animationValues.animationSpeed;
+      this.getNode(j).y -= this._animationValues.animationSpeed;
     } else {
+      this.getNode(i).y = this._animationValues.swapSecond.y + this._rectProps.height + this._props.gap;
+      this.getNode(j).y = this._animationValues.swapSecond.y - this._rectProps.height - this._props.gap;
       this._animationValues.swapStage++;
     }
   }
 
   swapAnimation2(i, j) {
-    if (this._rects.children[i].x < this._animationValues.swapSecond.x) {
-      this._rects.children[i].x += this._animationValues.animationSpeed * Math.log(j - i + 1);
-      this._rects.children[j].x -= this._animationValues.animationSpeed * Math.log(j - i + 1);
+    if (this.getNode(i).x < this._animationValues.swapSecond.x) {
+      this.getNode(i).x += this._animationValues.animationSpeed * Math.log(j - i + 1);
+      this.getNode(j).x -= this._animationValues.animationSpeed * Math.log(j - i + 1);
     } else {
-      this._rects.children[i].x = this._animationValues.swapSecond.x;
-      this._rects.children[j].x = this._animationValues.swapFirst.x;
+      this.getNode(i).x = this._animationValues.swapSecond.x;
+      this.getNode(j).x = this._animationValues.swapFirst.x;
       this._animationValues.swapStage++;
     }
   }
 
   swapAnimation3(i, j) {
-    if (this._rects.children[i].y > this._animationValues.swapFirst.y) {
-      this._rects.children[i].y -= this._animationValues.animationSpeed;
-      this._rects.children[j].y += this._animationValues.animationSpeed;
+    if (this.getNode(i).y > this._animationValues.swapFirst.y) {
+      this.getNode(i).y -= this._animationValues.animationSpeed;
+      this.getNode(j).y += this._animationValues.animationSpeed;
     } else {
+      this.getNode(i).y = this._animationValues.swapFirst.y;
+      this.getNode(j).y = this._animationValues.swapSecond.y;
       this._animationValues.swapStage++;
     }
   }
@@ -218,10 +349,10 @@ class VisualArray {
         this._animationValues.swapStage = 0;
         break;
       case 0:
-        this._animationValues.swapFirst.x = this._rects.children[i].x;
-        this._animationValues.swapFirst.y = this._rects.children[i].y;
-        this._animationValues.swapSecond.x = this._rects.children[j].x;
-        this._animationValues.swapSecond.y = this._rects.children[j].y;
+        this._animationValues.swapFirst.x = this.getNode(i).x;
+        this._animationValues.swapFirst.y = this.getNode(i).y;
+        this._animationValues.swapSecond.x = this.getNode(j).x;
+        this._animationValues.swapSecond.y = this.getNode(j).y;
         this._animationValues.swapStage++;
         break;
       case 1:
@@ -235,6 +366,8 @@ class VisualArray {
         break;
       case 4:
         [this._rects.children[i], this._rects.children[j]] = [this._rects.children[j], this._rects.children[i]];
+        // [this.getRect(i), this.getRect(j)] =
+        // [this.getRect(j), this.getRect(i)];
         this._animationValues.swapStage = -1;
         this.currentAnimation = null;
         break;
@@ -273,7 +406,7 @@ class VisualArray {
 
   drawMarked() {
     for (const rect of this._rects.children) {
-      rect.alpha = this.props.normalAlpha;
+      rect.children[0].alpha = this.props.normalAlpha;
     }
 
     if (this.currentAnimation.all === true) {
@@ -284,17 +417,16 @@ class VisualArray {
 
     for (const item of this.currentAnimation.indices) {
       if (this.currentAnimation.markType === "highlight")
-        this._rects.children[item].alpha = this.props.highlightedAlpha;
+        this.getRect(item).alpha = this.props.highlightedAlpha;
       else if (this.currentAnimation.markType === "active")
-        this._rects.children[item].alpha = this.props.activeAlpha;
+        this.getRect(item).alpha = this.props.activeAlpha;
       else if (this.currentAnimation.markType === "mixed") {
         if (item.markType === "highlight") {
-          this._rects.children[item.index].alpha = this.props.highlightedAlpha;
+          this.getRect(item.index).alpha = this.props.highlightedAlpha;
         } else if (item.markType === "active") {
-          this._rects.children[item.index].alpha = this.props.activeAlpha;
+          this.getRect(item.index).alpha = this.props.activeAlpha;
         }
       }
-
     }
 
     this._animationValues.animationTime += this._animationValues.animationSpeed;
@@ -331,7 +463,7 @@ class VisualArray {
   draw() {
     if (this._animationValues.animationPaused)
       return;
-    // console.log(this._animationArray.length)
+
     if (!this.currentAnimation) {
       this.currentAnimation = this._animationArray.pop();
       this._animationValues.animationTime = 0;
