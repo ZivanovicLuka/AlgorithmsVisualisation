@@ -1,8 +1,12 @@
+import { app } from "./pixi_init";
+
 class VisualArray {
-  constructor(array = [1, 2, 3, 4, 5, 6], pixi = null, app = null) {
+  constructor(array = [1, 2, 3, 4, 5, 6], pixi = null, app = null, context = null) {
     this._array = array;
     this.pixi = pixi;
     this.app = app;
+    this.context = context
+    console.log(this.context)
     this._rects = null;
 
     this.currentAnimation = null;
@@ -38,6 +42,7 @@ class VisualArray {
     }
 
 
+
     this._rectProps = {
       n: this._array.length,
       width: 100,
@@ -62,6 +67,24 @@ class VisualArray {
     }
 
     this.addNode = null;
+
+
+
+    this.changeMode = (mode) => {
+      this.editMode = (mode == "Edit");
+      for (const node of this._rects.children) {
+        let deleteNode = node.children[1];
+        if (this.editMode)
+          deleteNode.alpha = this.props.normalAlpha;
+        else
+          deleteNode.alpha = 0;
+      }
+
+      if (this.editMode)
+        this.addNode.alpha = this.props.normalAlpha;
+      else
+        this.addNode.alpha = 0;
+    }
 
     // if (this.constructor === VisualArray) {
     //   throw new TypeError('Abstract class "VisualArray" cannot be instantiated directly.');
@@ -172,7 +195,7 @@ class VisualArray {
       0,
       10,
     );
-    
+
 
     let text = new this.pixi.Text(
       '-', {
@@ -182,12 +205,13 @@ class VisualArray {
         align: 'center'
       });
     text.anchor.set(0.5, 0.5);
-    text.position.set(0,-2);
+    text.position.set(0, -2);
     deleteGraphics.addChild(text);
 
     node.addChild(deleteGraphics);
 
     deleteGraphics.click = () => {
+      console.log(this)
       if (!this.editMode)
         return;
 
@@ -270,8 +294,11 @@ class VisualArray {
     };
   }
 
-  drawRects() {
-    this._rects = new this.pixi.Graphics();
+  createRects() {
+    while(this._rects.children[0]) { 
+      this._rects.removeChild(this._rects.children[0]);
+    }
+
     let rects = this.nodes.map((r, i) => {
 
       let rect = this.drawRect(r);
@@ -286,10 +313,13 @@ class VisualArray {
 
       return node;
     })
+    return rects;
+  }
+
+  drawRects() {
+    this._rects = new this.pixi.Graphics();
+    let rects = this.createRects();
     this.app.stage.addChild(this._rects);
-
-
-    // TODO -> add node for adding new element
 
     let addR = this.generateNode('+', this._rects.children.length);
     let addRect = this.drawRect(addR, 0x22ED34);
@@ -299,6 +329,27 @@ class VisualArray {
       addRect.alpha = 0
 
     this._addHoverEvent(addRect, "edit");
+    addRect.click = () => {
+      console.log(this)
+      if (!this.editMode)
+        return;
+
+      this.context.modal.open();
+      this.context.modal.asignBtn1(() => {
+        console.log(this.nodes)
+        this._array.push(parseInt(this.context.modal.value));        
+        this.createRects();
+        this.repositionateNodes();
+      });
+
+        // this.context.
+      // let index = deleteGraphics.parent._customIndex;
+
+      // this._array.splice(index, 1);
+      // deleteGraphics.parent.destroy();
+
+      // this.repositionateNodes();
+    };
 
     this.app.stage.addChild(this.addNode);
 
@@ -434,19 +485,6 @@ class VisualArray {
       this.currentAnimation = null;
   }
 
-  _shuffle() {
-    for (let i = this.len - 1; i > 0; i--) {
-      let j = Math.floor(Math.random() * i);
-      let rects = this._rects.children;
-
-      [rects[i].x, rects[j].x] = [rects[j].x, rects[i].x];
-      [rects[i].y, rects[j].y] = [rects[j].y, rects[i].y];
-
-      [rects[i], rects[j]] = [rects[j], rects[i]];
-      [this._array[i], this._array[j]] = [this._array[j], this._array[i]];
-    }
-  }
-
   shuffle() {
     for (let i = this.len - 1; i > 0; i--) {
       let j = Math.floor(Math.random() * i);
@@ -480,6 +518,6 @@ class VisualArray {
   }
 }
 
-export default function (array, pixi, app) {
-  return new VisualArray(array, pixi, app);
+export default function (array, pixi, app, context) {
+  return new VisualArray(array, pixi, app, context);
 }

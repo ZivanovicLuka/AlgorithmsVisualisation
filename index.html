@@ -9,6 +9,19 @@
 </head>
 
 <body>
+  <div id="modal-overlay" class="is-hidden">
+    <div id="modal">
+      <span class="button-close">×</span>
+      <h2>Title</h2>
+      <hr>
+      <input class="modal-input" type="text" name="">
+      <div class='bot'>
+        <hr>
+        <button class='button button1'>Add</button>
+      </div>
+    </div>
+  </div>
+
   <div id="mainMenu">
     <div id="headerPop" class="mainMenuIcon">
       <i class="fas fa-sitemap"></i>
@@ -24,12 +37,18 @@
     <div id="data"></div>
   </div>
   <div id="options">
-    <button id="pause">Play</button>
+    <button id="play"><i class="fas fa-play"></i></button>
+    <button id="pause"><i class="fas fa-pause"></i></button>
     <div class="separator"></div>
     <div id="animationSpeedDiv">
       <label for="animationSpeed">Speed:</label>
       <input id="animationSpeed" type="range" class="range" min=0 max=30 step=1 value=5>
       <output id="animationSpeedOutput">5</output>
+    </div>
+    <div class="separator"></div>
+    <div id="modeDiv">
+      <label for="changeMode">Change mode:</label>
+      <button id="changeMode"></button>
     </div>
   </div>
   <script src="dist/main.bundle.js"></script>

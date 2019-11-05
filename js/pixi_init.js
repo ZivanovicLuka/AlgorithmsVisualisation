@@ -19,9 +19,6 @@ app.renderer.resize(window.innerWidth, window.innerHeight);
 
 const loader = new PIXI.Loader();
 
-loader
-  .add("assets/images/box.png")
-
 document.body.appendChild(app.view);
 
 export {app, loader}
