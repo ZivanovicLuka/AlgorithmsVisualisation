@@ -1,4 +1,6 @@
-let bubbleSort = (arr) => {
+"use strict";
+
+let selectionSort = (arr) => {
   for (let i = 0; i < arr.len; i++) {
     let min = i;
     for (let j = i + 1; j < arr.len; j++) {
@@ -16,4 +18,4 @@ let bubbleSort = (arr) => {
   arr.mark([]);
 };
 
-export default bubbleSort
+export default selectionSort

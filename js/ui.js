@@ -1,3 +1,5 @@
+"use strict";
+
 import 'jquery';
 
 let context = null;
@@ -24,11 +26,6 @@ $(document).ready(function () {
     $("#options").stop(true, false).fadeToggle();
   })
 
-  $("#changeMode").click(e => {
-    activeModeIndex = (activeModeIndex + 1) % modes.length;
-    changeModeUI(activeModeIndex);
-  })
-
   $("#pause").click(e => {
     context.pause();
   })
@@ -39,13 +36,11 @@ $(document).ready(function () {
 });
 
 function init() {
-  $("#changeMode").text(modes[activeModeIndex]);
   $("#header").addClass("visible");
   positionateMainMenu();
 }
 
 function changeModeUI(activeMode) {
-  $("#changeMode").text(modes[activeMode]);
   context.changeMode(modes[activeMode]);
   if(modes[activeMode] != "Play")
     context.pause();

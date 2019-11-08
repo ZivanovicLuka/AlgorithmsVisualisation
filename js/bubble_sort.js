@@ -1,3 +1,5 @@
+"use strict";
+
 let bubbleSort = (arr) => {
   for (let i = 0; i < arr.len; i++) {
     // for (let j = 0; j < arr.len-1-i; j++) {

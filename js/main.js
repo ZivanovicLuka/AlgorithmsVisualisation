@@ -1,6 +1,5 @@
 "use strict";
 
-// Font Awesome 5 (Free)
 import '@fortawesome/fontawesome-free/js/fontawesome'
 import '@fortawesome/fontawesome-free/js/solid'
 import '@fortawesome/fontawesome-free/js/regular'
@@ -16,11 +15,9 @@ import {
 import 'jquery';
 
 import Modal from './modal'
-
 const modal = new Modal($('#modal-overlay'));
 
 import arrayModule from "./array";
-
 let arr = arrayModule([...Array(6).keys()].map(x => x+1), PIXI, app, {
   modal
 });
@@ -37,74 +34,10 @@ ui({
   pause
 })
 
-
-// loader.load(setup);
-
-// function setup() {
-
-// let cat = PIXI.Sprite.from("assets/images/box.png");
-// app.stage.addChild(cat);
-
-
-// {
-  // let isActive = true;
-  // let drawDialog = () => {
-  //   if (!isActive)
-  //     return;
-
-  //   let dialogGroup = new PIXI.Graphics();
-
-  //   let dialogBackground = new PIXI.Graphics();
-
-  //   dialogBackground.beginFill(0x000000);
-  //   dialogBackground.drawRect(
-  //     0,
-  //     0,
-  //     window.innerWidth,
-  //     window.innerHeight
-  //   );
-  //   dialogBackground.endFill();
-
-  //   dialogBackground.alpha = 0.3;
-
-  //   // dialogBackground.buttonMode = true;
-
-  //   dialogBackground.interactive = true;
-  //   dialogBackground.hitArea = new PIXI.Rectangle(
-  //     0,
-  //     0,
-  //     window.innerWidth,
-  //     window.innerHeight
-  //   );
-
-  //   // dialogBackground.on('mousedown', () => {
-  //   //   dialogBackground.alpha = 0;
-  //   //   dialogBackground.interactive = false;
-  //   // })
-
-  //   let x=300;
-  //   let y=150;
-
-  //   let dialog = new PIXI.Graphics();
-  //   dialog.beginFill(0xffffff);
-  //   dialog.drawRect(
-  //     (window.innerWidth-x)/2,
-  //     (window.innerHeight-y)/2,
-  //     x,
-  //     y
-  //   );
-  //   dialog.endFill();
-
-  //   dialogGroup.addChild(dialogBackground);
-  //   dialogGroup.addChild(dialog);
-
-  //   app.stage.addChild(dialogGroup);
-  // };
-// }
-
 arr.drawRects();
 arr.shuffle();
-// drawDialog();
+
+animate();
 
 let headerDom = document.querySelector("#header");
 let algorithmsDom = headerDom.querySelector("#algorithms");
@@ -152,7 +85,6 @@ algorithms.forEach(algorithm => {
   algorithmsDom.appendChild(algorithmButton)
 })
 
-animate();
 
 function animate() {
   app.renderer.render(app.stage);

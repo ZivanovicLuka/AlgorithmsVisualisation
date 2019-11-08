@@ -52,6 +52,8 @@ function partition(arr, left, right) {
   return i;
 }
 
+"use strict";
+
 function _quickSort(arr, left, right) {
   let index;
   if (arr.len > 1 && left < right) {

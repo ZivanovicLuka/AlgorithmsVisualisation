@@ -1,3 +1,5 @@
+"use strict";
+
 import { app } from "./pixi_init";
 
 class VisualArray {
@@ -6,13 +8,14 @@ class VisualArray {
     this.pixi = pixi;
     this.app = app;
     this.context = context
-    console.log(this.context)
     this._rects = null;
 
     this.currentAnimation = null;
     this._animationArray = [];
 
     this.editMode = true;
+
+    this.context.modal.title("Add node");
 
     this._animationValues = {
       i: -1,
@@ -41,17 +44,12 @@ class VisualArray {
       highlightDuration: 200,
     }
 
-
-
-    this._rectProps = {
-      n: this._array.length,
-      width: 100,
-      height: 50
-    }
-
     this._props = {
       gap: 10,
-      radius: Math.min(this._rectProps.width, this._rectProps.height) * 0.3,
+      radius: 16,
+
+      maxWidth: 100,
+
       innerColor: 0xcccccc,
       outerColor: 0x333333,
       textColor: 0x000000,
@@ -61,14 +59,7 @@ class VisualArray {
       activeAlpha: 1
     }
 
-    this._layoutProps = {
-      x: (window.innerWidth - (this._rectProps.n * this._rectProps.width) - (this._rectProps.n * this.props.gap)) / 2,
-      y: (window.innerHeight - this._rectProps.height) / 2
-    }
-
     this.addNode = null;
-
-
 
     this.changeMode = (mode) => {
       this.editMode = (mode == "Edit");
@@ -84,15 +75,37 @@ class VisualArray {
         this.addNode.alpha = this.props.normalAlpha;
       else
         this.addNode.alpha = 0;
+    };
+  }
+
+  _calcRectWidth() {
+    let n = this._array.length + 2; // on right can be + button
+    let innerWidth = window.innerWidth;
+    let gap = this._props ? this._props.gap : 0; // HACK: this function is called serveral times, on first two props is undefined
+    let maxWidth = this._props ? this._props.maxWidth : 0; // HACK: this function is called serveral times, on first two props is undefined
+
+    let width = (innerWidth- gap*(n-1))/n;
+
+    if(width > maxWidth) {
+      width = maxWidth;
     }
 
-    // if (this.constructor === VisualArray) {
-    //   throw new TypeError('Abstract class "VisualArray" cannot be instantiated directly.');
-    // }
+    return width
+  }
 
-    // if (this.render === undefined) {
-    //   throw new TypeError('Classes extending the widget abstract class');
-    // }
+  get _rectProps() {
+    return {
+      n: this._array.length,
+      width: this._calcRectWidth(),
+      height: 50
+    }
+  }
+
+  get _layoutProps() {
+    return {
+      x: (window.innerWidth - (this._rectProps.n * this._rectProps.width) - (this._rectProps.n * this.props.gap)) / 2,
+      y: (window.innerHeight - this._rectProps.height) / 2
+    }
   }
 
   get props() {
@@ -102,6 +115,8 @@ class VisualArray {
   generateNodePosition(i) {
     let x = this._layoutProps.x + i * (this._rectProps.width + this._props.gap);
     let y = this._layoutProps.y;
+    console.log(i, x, this._rectProps.width, this._props.gap)
+
     return {
       x,
       y
@@ -109,6 +124,13 @@ class VisualArray {
   }
 
   repositionateNodes() {
+    let width = this._calcRectWidth() + this.props.gap; // FIXME: this.props.gap ne znam zasto je ovde ali inace duplira
+    this._rectProps.n = this._array.length;
+
+    console.log(this._rects.children[0]);
+    console.log(width)
+    console.log(this.props.gap)
+
     this._rects.children.forEach((node, i) => {
       node._customIndex = i;
 
@@ -118,14 +140,17 @@ class VisualArray {
       } = this.generateNodePosition(i);
       node.x = x;
       node.y = y;
+      node.width = width;
     })
 
     let {
       x,
       y
     } = this.generateNodePosition(this._rects.children.length);
+
     this.addNode.x = x;
     this.addNode.y = y;
+    this.addNode.width = width - this.props.gap// FIXME: isti kao odozgo
   }
 
   generateNode(v, i) {
@@ -218,7 +243,9 @@ class VisualArray {
       let index = deleteGraphics.parent._customIndex;
 
       this._array.splice(index, 1);
-      deleteGraphics.parent.destroy();
+      // deleteGraphics.parent.destroy();
+
+      this.createRects();
 
       this.repositionateNodes();
     };
@@ -264,9 +291,7 @@ class VisualArray {
     text.position.set(r.center.x, r.center.y);
 
     graphics.addChild(text);
-
-
-
+    
     return graphics;
   }
 
@@ -321,7 +346,7 @@ class VisualArray {
     let rects = this.createRects();
     this.app.stage.addChild(this._rects);
 
-    let addR = this.generateNode('+', this._rects.children.length);
+    let addR = this.generateNode('+', this._array.length);
     let addRect = this.drawRect(addR, 0x22ED34);
     this.addNode = this.createNode(addRect, addR);
 
@@ -335,20 +360,21 @@ class VisualArray {
         return;
 
       this.context.modal.open();
+
+      // TODO: Move this to function
       this.context.modal.asignBtn1(() => {
-        console.log(this.nodes)
         this._array.push(parseInt(this.context.modal.value));        
-        this.createRects();
+        this.createRects(); //TODO: JUST ADD, dont delete all and create new
         this.repositionateNodes();
       });
 
-        // this.context.
-      // let index = deleteGraphics.parent._customIndex;
-
-      // this._array.splice(index, 1);
-      // deleteGraphics.parent.destroy();
-
-      // this.repositionateNodes();
+      // TODO: Move this to function
+      this.context.modal.asignEnter(() => {
+        this._array.push(parseInt(this.context.modal.value));        
+        this.createRects(); //TODO: JUST ADD, dont delete all and create new
+        this.repositionateNodes();
+        this.context.modal.cleanInput();
+      }, false);
     };
 
     this.app.stage.addChild(this.addNode);
@@ -492,6 +518,7 @@ class VisualArray {
 
       [rects[i].x, rects[j].x] = [rects[j].x, rects[i].x];
       [rects[i].y, rects[j].y] = [rects[j].y, rects[i].y];
+      [rects[i]._customIndex, rects[j]._customIndex] = [rects[j]._customIndex, rects[i]._customIndex];
 
       [rects[i], rects[j]] = [rects[j], rects[i]];
       [this._array[i], this._array[j]] = [this._array[j], this._array[i]];
